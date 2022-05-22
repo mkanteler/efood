@@ -1,0 +1,47 @@
+with breakfasts as (SELECT  
+  city,
+  sum(amount)as breakfast_amount,
+  count(distinct order_id) as breakfast_orders,
+  count(distinct user_id) as breakfast_users
+FROM `efood2022-350818.main_assessment.orders`
+where cuisine = 'Breakfast'
+group by 1)
+
+,efood as (SELECT  
+  city,
+  sum(amount)as efood_amount,
+  count(distinct order_id) as efood_orders,
+  count(distinct user_id) as efood_users
+FROM `efood2022-350818.main_assessment.orders`
+group by 1)
+
+,breakfast_users as (select city, count(user_id) as returning_users from(select
+  city, user_id, count(order_id) as no_of_orders
+  FROM `efood2022-350818.main_assessment.orders`
+  where cuisine = 'Breakfast'
+  group by 1, 2) where no_of_orders>3 group by 1)
+
+,efood_users as (select city, count(user_id) as returning_users from(select
+  city, user_id, count(order_id) as no_of_orders
+  FROM `efood2022-350818.main_assessment.orders`
+  group by 1, 2) where no_of_orders>3 group by 1)
+
+
+
+select distinct 
+  o.city,
+  b.breakfast_orders,
+  b.breakfast_amount/b.breakfast_orders as breakfast_basket,
+  e.efood_amount/e.efood_orders as efood_basket,
+  b.breakfast_orders/b.breakfast_users as breakfast_freq,
+  e.efood_orders/e.efood_users as efood_freq,
+  v.returning_users/b.breakfast_users as breakfast_users3freq_perc,
+  u.returning_users/e.efood_users as efood_users3freq_perc
+from `efood2022-350818.main_assessment.orders` o
+left join breakfasts b on b.city = o.city
+left join efood e on e.city = o.city
+left join breakfast_users v on v.city = o.city
+left join efood_users u on u.city = o.city
+where o.city in (select distinct city from efood where efood_orders >=1000 )
+order by 2 desc
+limit 5
