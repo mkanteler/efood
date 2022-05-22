@@ -1,0 +1,29 @@
+-- What percentage of Orders do the top 10 users of each city contribute to the city
+with top10users as (
+select city, sum(no_of_orders) as top10orders from (
+select
+  city,
+  user_id, 
+  count(order_id) as no_of_orders,
+  sum(amount) as amount,
+  ROW_NUMBER() over(partition by city ORDER by count(order_id) DESC, sum(amount) desc) r
+FROM `efood2022-350818.main_assessment.orders`
+group by 1, 2 order by 1 asc, 3,4 desc )
+where r < 11 group by 1 order by 1)
+
+,efood_orders as(
+SELECT  
+  city,
+  count(distinct order_id) as efood_orders,
+FROM `efood2022-350818.main_assessment.orders` 
+group by 1)
+
+select 
+  o.city,
+  top10orders/efood_orders as perc_on_orders
+from efood_orders o
+left join top10users t on t.city = o.city
+order by 2 desc
+
+
+
