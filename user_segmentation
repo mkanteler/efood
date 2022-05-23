@@ -1,0 +1,15 @@
+-- Break down the users on how often they order.
+
+select
+  city,
+  cuisine,
+  user_id, 
+  count(order_id) as no_of_orders,
+  case when count(order_id) = 1 then 'First timer'
+  when count(order_id) between 2 and 5 then 'Casual'
+  when count(order_id) between 6 and 15 then 'Core'
+  when count(order_id) > 15 then 'Power' end as user_type,
+  sum(amount) as amount,
+  ROW_NUMBER() over(partition by city ORDER by count(order_id) DESC, sum(amount) desc) r
+FROM `efood2022-350818.main_assessment.orders`
+group by 1, 2, 3 
